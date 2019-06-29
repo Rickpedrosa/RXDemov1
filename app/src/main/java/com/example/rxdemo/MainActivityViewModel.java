@@ -36,14 +36,13 @@ public class MainActivityViewModel extends ViewModel {
         this.animeRepository = animeRepository;
     }
 
-    void callKitsuApi() {
-        String id = "1555"; // naruto shippuden
+    void callKitsuApi(String id) {
         //ON NEXT
         //ON ERROR
         //ON COMPLETE
         String totalFormat = "/%d";
         callState.postValue(Resource.loading());
-        disposable = getEpisodesFromResponse(id, 0, String.format(Locale.US, totalFormat, 500))
+        disposable = getEpisodesFromResponse(id, 0, String.format(Locale.US, totalFormat, 26))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(animeEpisode -> {
