@@ -9,6 +9,7 @@ import com.example.rxdemo.data.remote.AnimeRepository;
 import com.example.rxdemo.data.remote.AnimeService;
 import com.example.rxdemo.data.remote.pojos.anime_episode.AnimeEpisode;
 import com.example.rxdemo.data.remote.pojos.anime_episode.Datum;
+import com.example.rxdemo.networking.RXJavaProvider;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -77,20 +78,28 @@ public class MainActivityViewModel extends ViewModel {
     }
 
     private Observable<AnimeEpisode> getEpisodesFromResponse(String id, int offset, String total) {
-        return animeRepository.getAnimeEpisodes(id, offset, AnimeService.LIMIT)
-                .flatMap((Function<Response<AnimeEpisode>, ObservableSource<AnimeEpisode>>) animeEpisodeResponse ->
-                        Observable.just(Objects.requireNonNull(animeEpisodeResponse.body())))
+        return RXJavaProvider.episodeObservableFlatMapped(animeRepository.getAnimeEpisodes(
+                id,
+                offset,
+                AnimeService.LIMIT))
                 .concatMap(animeEpisode -> {
                     updateCallProgress(animeEpisode, total);
                     if (animeEpisode.getLinks().getNext() == null) {
-                        return animeRepository.getAnimeEpisodes(id, offset, AnimeService.LIMIT)
-                                .flatMap((Function<Response<AnimeEpisode>, ObservableSource<AnimeEpisode>>) animeEpisodeResponse ->
-                                        Observable.just(Objects.requireNonNull(animeEpisodeResponse.body())));
+                        return RXJavaProvider.episodeObservableFlatMapped(
+                                animeRepository.getAnimeEpisodes(
+                                        id,
+                                        offset,
+                                        AnimeService.LIMIT));
                     } else {
-                        return Observable.zip(animeRepository.getAnimeEpisodes(id, offset, AnimeService.LIMIT)
-                                        .flatMap((Function<Response<AnimeEpisode>, ObservableSource<AnimeEpisode>>) animeEpisodeResponse ->
-                                                Observable.just(Objects.requireNonNull(animeEpisodeResponse.body()))),
-                                getEpisodesFromResponse(id, (offset + AnimeService.PLUS_OFFSET), total),
+                        return Observable.zip(RXJavaProvider.episodeObservableFlatMapped(
+                                animeRepository.getAnimeEpisodes(
+                                        id,
+                                        offset,
+                                        AnimeService.LIMIT)),
+                                getEpisodesFromResponse(
+                                        id,
+                                        (offset + AnimeService.PLUS_OFFSET),
+                                        total),
                                 (epOne, epTwo) -> {
                                     AnimeEpisode theTrueOne = new AnimeEpisode();
                                     List<Datum> datum = new ArrayList<>(epOne.getData());
